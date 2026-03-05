@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="作业批改">
+<meta name="theme-color" content="#FF6B35">
+<link rel="manifest" href="./manifest.json">
+<title>AI 作业批改助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #FF6B35;
+  --orange-light: #FFF0EB;
+  --orange-dark: #E55A26;
+  --red: #EF4444;
+  --red-light: #FEE2E2;
+  --green: #10B981;
+  --green-light: #D1FAE5;
+  --blue: #3B82F6;
+  --blue-light: #DBEAFE;
+  --yellow: #F59E0B;
+  --yellow-light: #FEF3C7;
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-400: #9CA3AF;
+  --gray-600: #4B5563;
+  --gray-800: #1F2937;
+  --gray-900: #111827;
+  --surface: #FFFFFF;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --radius: 16px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  height: 100%; width: 100%; overflow: hidden;
+  background: var(--gray-100);
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  color: var(--gray-900);
+}
+#app {
+  display: flex; flex-direction: column; height: 100%;
+  max-width: 480px; margin: 0 auto;
+  background: var(--gray-100);
+  box-shadow: 0 0 60px rgba(0,0,0,0.12);
+  position: relative;
+}
+
+/* ===== HEADER ===== */
+.header {
+  background: linear-gradient(135deg, #FF6B35 0%, #FF8C5A 100%);
+  padding: calc(var(--safe-top) + 14px) 16px 14px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.header::before {
+  content: '';
+  position: absolute; top: -30px; right: -20px;
+  width: 120px; height: 120px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+.header::after {
+  content: '';
+  position: absolute; bottom: -20px; right: 40px;
+  width: 70px; height: 70px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 50%;
+}
+.header-content { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; }
+.header h1 {
+  color: #fff; font-size: 18px; font-weight: 700; flex: 1;
+  font-family: 'ZCOOL XiaoWei', serif;
+  letter-spacing: 1px;
+}
+.header-badge {
+  background: rgba(255,255,255,0.2);
+  color: #fff; padding: 4px 12px;
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+
+/* ===== VIEWS ===== */
+.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.view.active { display: flex; }
+
+/* ===== SCROLL ===== */
+.scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.scroll::-webkit-scrollbar { display: none; }
+.pad { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ===== SUBJECT TABS ===== */
+.subject-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--gray-200);
+  padding: 8px 14px; flex-shrink: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  display: flex; gap: 8px;
+}
+.subject-bar::-webkit-scrollbar { display: none; }
+.subject-btn {
+  white-space: nowrap; border: none; border-radius: 20px;
+  padding: 6px 16px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+  background: var(--gray-100); color: var(--gray-600);
+  flex-shrink: 0;
+}
+.subject-btn.active { background: var(--orange); color: #fff; }
+
+/* ===== UPLOAD AREA ===== */
+.upload-area {
+  border: 2.5px dashed var(--gray-200);
+  border-radius: var(--radius); background: var(--surface);
+  padding: 36px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  cursor: pointer; transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.upload-area:active { border-color: var(--orange); background: var(--orange-light); }
+.upload-icon { font-size: 52px; }
+.upload-title { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+.upload-sub { font-size: 13px; color: var(--gray-400); text-align: center; line-height: 1.5; }
+.upload-btns { display: flex; gap: 10px; margin-top: 4px; }
+.upload-btn {
+  padding: 10px 20px; border-radius: 10px; border: none;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.upload-btn:active { transform: scale(0.96); }
+.btn-camera { background: var(--orange); color: #fff; }
+.btn-gallery { background: var(--orange-light); color: var(--orange); border: 1.5px solid var(--orange); }
+
+/* ===== PREVIEW CARD ===== */
+.preview-card {
+  background: var(--surface); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.preview-img-wrap { position: relative; background: #1F2937; }
+.preview-img { width: 100%; max-height: 280px; object-fit: contain; display: block; }
+.preview-actions {
+  position: absolute; top: 10px; right: 10px;
+  display: flex; gap: 6px;
+}
+.preview-action-btn {
+  background: rgba(0,0,0,0.6); color: #fff;
+  border: none; border-radius: 8px;
+  padding: 6px 12px; font-size: 12px; cursor: pointer;
+}
+.preview-info { padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; }
+.preview-name { font-size: 13px; color: var(--gray-600); }
+.preview-status { font-size: 12px; font-weight: 600; }
+
+/* ===== ANALYZE BTN ===== */
+.analyze-btn {
+  width: 100%; height: 52px;
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  color: #fff; border: none; border-radius: var(--radius);
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255,107,53,0.4);
+  transition: all 0.15s; letter-spacing: 1px;
+}
+.analyze-btn:active { transform: scale(0.98); box-shadow: 0 3px 10px rgba(255,107,53,0.3); }
+.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== PROGRESS ===== */
+.progress-wrap { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.progress-label { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.progress-bar-bg { height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--orange), #FFB347); border-radius: 4px; transition: width 0.4s; }
+.progress-msg { font-size: 12px; color: var(--gray-400); margin-top: 8px; }
+
+/* ===== RESULT SECTION ===== */
+.result-header {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow);
+}
+.score-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.score-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  border: 3px solid;
+}
+.score-num { font-size: 24px; font-weight: 800; line-height: 1; }
+.score-unit { font-size: 11px; font-weight: 600; margin-top: 1px; }
+.score-detail { flex: 1; }
+.score-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.score-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.stat-chip {
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+}
+.chip-correct { background: var(--green-light); color: var(--green); }
+.chip-wrong { background: var(--red-light); color: var(--red); }
+.chip-empty { background: var(--yellow-light); color: var(--yellow); }
+.chip-total { background: var(--blue-light); color: var(--blue); }
+
+/* ===== QUESTION CARDS ===== */
+.section-title {
+  font-size: 13px; font-weight: 700; color: var(--gray-400);
+  letter-spacing: 1px; padding: 0 2px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+.q-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px; box-shadow: var(--shadow);
+  border-left: 4px solid;
+  transition: transform 0.1s;
+}
+.q-card:active { transform: scale(0.99); }
+.q-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.q-badge {
+  width: 28px; height: 28px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+  color: #fff;
+}
+.q-num { font-size: 13px; font-weight: 800; color: var(--gray-400); flex-shrink: 0; padding-top: 5px; }
+.q-content { flex: 1; }
+.q-text { font-size: 14px; color: var(--gray-800); line-height: 1.6; font-weight: 500; }
+.q-answer-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.q-answer {
+  padding: 4px 10px; border-radius: 6px;
+  font-size: 12px; font-weight: 600;
+}
+.ans-student { background: var(--gray-100); color: var(--gray-600); }
+.ans-correct-val { background: var(--green-light); color: var(--green); }
+.ans-wrong-val { background: var(--red-light); color: var(--red); }
+
+.q-analysis {
+  background: var(--gray-50); border-radius: 10px;
+  padding: 10px 12px; margin-top: 10px;
+  font-size: 13px; color: var(--gray-600); line-height: 1.7;
+  border-left: 3px solid var(--orange);
+}
+.q-analysis-title { font-size: 11px; font-weight: 700; color: var(--orange); margin-bottom: 5px; letter-spacing: 0.5px; }
+
+.card-wrong { border-color: var(--red); }
+.card-correct { border-color: var(--green); }
+.card-empty { border-color: var(--yellow); }
+.badge-wrong { background: var(--red); }
+.badge-correct { background: var(--green); }
+.badge-empty { background: var(--yellow); }
+
+/* ===== REPORT SECTION ===== */
+.report-card {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow);
+}
+.report-title { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.report-body { font-size: 14px; color: var(--gray-600); line-height: 1.8; white-space: pre-wrap; }
+
+/* ===== BOTTOM BAR ===== */
+.bottom-bar {
+  background: var(--surface); border-top: 1px solid var(--gray-200);
+  padding: 10px 14px calc(var(--safe-bottom) + 10px);
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+.bottom-bar button {
+  height: 46px; border: none; border-radius: 12px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.bottom-bar button:active { transform: scale(0.97); }
+.btn-new { background: var(--gray-100); color: var(--gray-600); flex: 1; }
+.btn-copy-report { background: var(--green); color: #fff; flex: 2; box-shadow: 0 4px 14px rgba(16,185,129,0.3); }
+
+/* ===== NAV ===== */
+.navbar {
+  background: var(--surface); border-top: 1px solid var(--gray-200);
+  display: flex; padding-bottom: var(--safe-bottom); flex-shrink: 0;
+}
+.nav-btn {
+  flex: 1; border: none; background: transparent;
+  padding: 8px 4px 6px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 10px; color: var(--gray-400); font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-btn.active { color: var(--orange); font-weight: 700; }
+.nav-icon { font-size: 22px; line-height: 1; }
+
+/* ===== HISTORY ===== */
+.history-item {
+  background: var(--surface); border-radius: var(--radius);
+  padding: 14px; box-shadow: var(--shadow); cursor: pointer;
+  display: flex; gap: 12px; align-items: center;
+  transition: transform 0.1s;
+}
+.history-item:active { transform: scale(0.98); }
+.history-thumb {
+  width: 56px; height: 56px; border-radius: 10px;
+  object-fit: cover; background: var(--gray-100); flex-shrink: 0;
+}
+.history-info { flex: 1; min-width: 0; }
+.history-subject { font-size: 12px; color: var(--orange); font-weight: 700; margin-bottom: 3px; }
+.history-score { font-size: 15px; font-weight: 800; color: var(--gray-900); }
+.history-meta { font-size: 11px; color: var(--gray-400); margin-top: 3px; }
+.history-arrow { font-size: 20px; color: var(--gray-400); }
+.history-score-badge {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  flex-shrink: 0; border: 2.5px solid;
+}
+.history-score-num { font-size: 16px; font-weight: 800; line-height: 1; }
+.history-score-unit { font-size: 9px; font-weight: 600; }
+
+/* ===== SETTINGS ===== */
+.settings-section {
+  background: var(--surface); border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow);
+}
+.settings-item {
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.settings-item:last-child { border-bottom: none; }
+.settings-icon { font-size: 22px; flex-shrink: 0; }
+.settings-label { font-size: 14px; font-weight: 600; color: var(--gray-800); flex: 1; }
+.settings-input {
+  flex: 1; border: 1.5px solid var(--gray-200);
+  border-radius: 10px; padding: 8px 12px; font-size: 14px;
+  background: var(--gray-50); outline: none; font-family: inherit;
+}
+.settings-input:focus { border-color: var(--orange); }
+.settings-select {
+  flex: 1; border: 1.5px solid var(--gray-200);
+  border-radius: 10px; padding: 8px 12px; font-size: 14px;
+  background: var(--gray-50); outline: none;
+}
+.settings-save {
+  width: 100%; height: 48px; background: var(--orange);
+  color: #fff; border: none; border-radius: var(--radius);
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255,107,53,0.3);
+  transition: all 0.15s; margin-top: 4px;
+}
+.settings-save:active { transform: scale(0.98); }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 1000; backdrop-filter: blur(3px);
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  background: var(--surface); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 480px; max-height: 85vh;
+  padding: 20px 20px calc(var(--safe-bottom) + 20px);
+  overflow-y: auto;
+  animation: slideUp 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 40px; height: 4px; background: var(--gray-200); border-radius: 2px; margin: 0 auto 16px; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.modal-close {
+  width: 100%; height: 46px; background: var(--orange); color: #fff;
+  border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
+  cursor: pointer; margin-top: 16px;
+}
+
+/* ===== EMPTY ===== */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; padding: 50px 20px; text-align: center;
+}
+.empty-icon { font-size: 60px; }
+.empty-title { font-size: 17px; font-weight: 700; color: var(--gray-800); }
+.empty-sub { font-size: 13px; color: var(--gray-400); line-height: 1.6; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: calc(var(--safe-bottom) + 80px);
+  left: 50%; transform: translateX(-50%) translateY(16px);
+  background: rgba(31,41,55,0.92); color: #fff;
+  padding: 10px 22px; border-radius: 24px;
+  font-size: 14px; opacity: 0;
+  transition: all 0.25s; pointer-events: none;
+  z-index: 9999; white-space: nowrap; max-width: 90vw;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== LOADING ANIMATION ===== */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+
+/* ===== DETAIL MODAL Q LIST ===== */
+.detail-q-item {
+  background: var(--gray-50); border-radius: 12px;
+  padding: 12px; margin-bottom: 10px;
+  border-left: 3px solid;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== HEADER ===== -->
+  <div class="header">
+    <div class="header-content">
+      <h1>✏️ AI 作业批改助手</h1>
+      <span class="header-badge" id="header-badge">就绪</span>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: HOME ===== -->
+  <div class="view active" id="view-home">
+    <div class="subject-bar" id="subject-bar">
+      <button class="subject-btn active" data-subject="自动识别" onclick="setSubject(this)">🤖 自动识别</button>
+      <button class="subject-btn" data-subject="数学" onclick="setSubject(this)">📐 数学</button>
+      <button class="subject-btn" data-subject="语文" onclick="setSubject(this)">📖 语文</button>
+      <button class="subject-btn" data-subject="英语" onclick="setSubject(this)">🔤 英语</button>
+      <button class="subject-btn" data-subject="物理" onclick="setSubject(this)">⚡ 物理</button>
+      <button class="subject-btn" data-subject="化学" onclick="setSubject(this)">🧪 化学</button>
+      <button class="subject-btn" data-subject="生物" onclick="setSubject(this)">🌿 生物</button>
+    </div>
+    <div class="scroll" id="home-scroll">
+      <div class="pad">
+        <!-- 上传区 -->
+        <div id="upload-area-wrap">
+          <div class="upload-area" id="upload-area" onclick="showAddMenu()">
+            <div class="upload-icon">📄</div>
+            <div class="upload-title">拍照或上传作业图片</div>
+            <div class="upload-sub">支持手写、印刷作业<br>拍摄清晰即可自动批改</div>
+            <div class="upload-btns" onclick="event.stopPropagation()">
+              <button class="upload-btn btn-camera" onclick="pickFile('camera')">📷 拍照</button>
+              <button class="upload-btn btn-gallery" onclick="pickFile('gallery')">🖼️ 相册</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 预览区（上传后显示） -->
+        <div id="preview-wrap" style="display:none">
+          <div class="preview-card">
+            <div class="preview-img-wrap">
+              <img class="preview-img" id="preview-img" src="" alt="">
+              <div class="preview-actions">
+                <button class="preview-action-btn" onclick="showAddMenu()">🔄 换图</button>
+              </div>
+            </div>
+            <div class="preview-info">
+              <span class="preview-name" id="preview-name">-</span>
+              <span class="preview-status" id="preview-status" style="color:var(--gray-400)">待分析</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 进度条（分析中显示） -->
+        <div id="progress-wrap" style="display:none">
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span id="progress-label-text">正在批改...</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <div class="progress-msg" id="progress-msg">AI 正在识别题目...</div>
+          </div>
+        </div>
+
+        <!-- 结果区（完成后显示） -->
+        <div id="result-wrap" style="display:none"></div>
+
+        <!-- 开始按钮 -->
+        <button class="analyze-btn" id="analyze-btn" onclick="startGrading()" disabled>
+          选择图片后开始批改
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: HISTORY ===== -->
+  <div class="view" id="view-history">
+    <div class="scroll">
+      <div class="pad" id="history-list">
+        <div class="empty-state">
+          <div class="empty-icon">📚</div>
+          <div class="empty-title">暂无批改记录</div>
+          <div class="empty-sub">批改完成的作业会保存在这里</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: SETTINGS ===== -->
+  <div class="view" id="view-settings">
+    <div class="scroll">
+      <div class="pad">
+        <div style="font-size:13px;color:var(--gray-400);font-weight:700;padding:4px 2px;letter-spacing:1px">AI 服务配置</div>
+        <div class="settings-section">
+          <div class="settings-item">
+            <span class="settings-icon">🔑</span>
+            <span class="settings-label">API Key</span>
+            <input type="password" class="settings-input" id="s-apikey" placeholder="粘贴您的 API Key">
+          </div>
+          <div class="settings-item">
+            <span class="settings-icon">🤖</span>
+            <span class="settings-label">模型</span>
+            <select class="settings-select" id="s-provider">
+              <option value="qwen2.5-vl-72b">阿里百炼 Qwen2.5-VL</option>
+              <option value="qwen-vl-max">阿里百炼 Qwen-VL-Max</option>
+              <option value="siliconflow-qwen2">硅基流动 Qwen2-VL</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="font-size:13px;color:var(--gray-400);font-weight:700;padding:4px 2px;letter-spacing:1px;margin-top:4px">批改偏好</div>
+        <div class="settings-section">
+          <div class="settings-item">
+            <span class="settings-icon">📝</span>
+            <span class="settings-label">学生姓名</span>
+            <input type="text" class="settings-input" id="s-name" placeholder="可选，用于生成报告">
+          </div>
+          <div class="settings-item">
+            <span class="settings-icon">🎓</span>
+            <span class="settings-label">年级</span>
+            <select class="settings-select" id="s-grade">
+              <option value="">自动识别</option>
+              <option value="小学低年级(1-3年级)">小学低年级(1-3年级)</option>
+              <option value="小学高年级(4-6年级)">小学高年级(4-6年级)</option>
+              <option value="初中">初中</option>
+              <option value="高中">高中</option>
+            </select>
+          </div>
+          <div class="settings-item">
+            <span class="settings-icon">💡</span>
+            <span class="settings-label">解析详细度</span>
+            <select class="settings-select" id="s-detail">
+              <option value="detailed">详细解析（推荐）</option>
+              <option value="brief">简要提示</option>
+              <option value="steps">分步骤解题</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="settings-save" onclick="saveSettings()">💾 保存设置</button>
+
+        <div style="text-align:center;font-size:12px;color:var(--gray-400);margin-top:8px;line-height:1.6">
+          API Key 仅保存在您的设备本地<br>不会上传到任何服务器
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== NAV ===== -->
+  <nav class="navbar">
+    <button class="nav-btn active" id="nav-home" onclick="switchTab(0)">
+      <span class="nav-icon">✏️</span>批改
+    </button>
+    <button class="nav-btn" id="nav-history" onclick="switchTab(1)">
+      <span class="nav-icon">📚</span>记录
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="switchTab(2)">
+      <span class="nav-icon">⚙️</span>设置
+    </button>
+  </nav>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+<div class="modal-overlay" id="modal-detail" onclick="closeModal('modal-detail')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-detail-content"></div>
+    <button class="modal-close" onclick="closeModal('modal-detail')">关闭</button>
+  </div>
+</div>
+
+<!-- ===== FILE INPUTS ===== -->
+<input type="file" id="file-camera" accept="image/*" capture="environment" style="display:none" onchange="handleFile(this.files[0])">
+<input type="file" id="file-gallery" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =============================================
+// 配置
+// =============================================
+const PROVIDERS = {
+  'qwen2.5-vl-72b': { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen2.5-vl-72b' },
+  'qwen-vl-max':    { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' },
+  'siliconflow-qwen2': { url: 'https://api.siliconflow.cn/v1', model: 'Qwen/Qwen2-VL-72B-Instruct' }
+};
+
+// =============================================
+// 状态
+// =============================================
+let cfg = { apikey: '', provider: 'qwen2.5-vl-72b', name: '', grade: '', detail: 'detailed' };
+let currentSubject = '自动识别';
+let currentImageData = null;
+let currentImageName = '';
+let currentResult = null;
+let history = [];
+let currentTab = 0;
+
+// =============================================
+// 持久化
+// =============================================
+function loadCfg() {
+  try {
+    const s = localStorage.getItem('hw_cfg');
+    if (s) cfg = { ...cfg, ...JSON.parse(s) };
+    const h = localStorage.getItem('hw_history');
+    if (h) history = JSON.parse(h);
+  } catch(e) {}
+  document.getElementById('s-apikey').value = cfg.apikey || '';
+  document.getElementById('s-provider').value = cfg.provider || 'qwen2.5-vl-72b';
+  document.getElementById('s-name').value = cfg.name || '';
+  document.getElementById('s-grade').value = cfg.grade || '';
+  document.getElementById('s-detail').value = cfg.detail || 'detailed';
+}
+
+function saveSettings() {
+  cfg.apikey = document.getElementById('s-apikey').value.trim();
+  cfg.provider = document.getElementById('s-provider').value;
+  cfg.name = document.getElementById('s-name').value.trim();
+  cfg.grade = document.getElementById('s-grade').value;
+  cfg.detail = document.getElementById('s-detail').value;
+  localStorage.setItem('hw_cfg', JSON.stringify(cfg));
+  showToast('✓ 设置已保存');
+}
+
+function saveHistory() {
+  try { localStorage.setItem('hw_history', JSON.stringify(history.slice(0, 30))); } catch(e) {}
+}
+
+// =============================================
+// 导航
+// =============================================
+function switchTab(idx) {
+  currentTab = idx;
+  ['view-home','view-history','view-settings'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', i === idx);
+  });
+  ['nav-home','nav-history','nav-settings'].forEach((id, i) => {
+    document.getElementById(id).classList.toggle('active', i === idx);
+  });
+  if (idx === 1) renderHistory();
+}
+
+// =============================================
+// 学科选择
+// =============================================
+function setSubject(btn) {
+  document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSubject = btn.dataset.subject;
+}
+
+// =============================================
+// 文件处理
+// =============================================
+function showAddMenu() {
+  document.getElementById('file-gallery').click();
+}
+
+function pickFile(source) {
+  if (source === 'camera') document.getElementById('file-camera').click();
+  else document.getElementById('file-gallery').click();
+}
+
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    currentImageData = e.target.result;
+    currentImageName = file.name;
+
+    // 显示预览
+    document.getElementById('upload-area-wrap').style.display = 'none';
+    const pw = document.getElementById('preview-wrap');
+    pw.style.display = 'block';
+    document.getElementById('preview-img').src = currentImageData;
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-status').textContent = '待批改';
+    document.getElementById('preview-status').style.color = 'var(--gray-400)';
+
+    // 重置结果
+    document.getElementById('result-wrap').style.display = 'none';
+    document.getElementById('result-wrap').innerHTML = '';
+    document.getElementById('progress-wrap').style.display = 'none';
+    currentResult = null;
+
+    // 激活按钮
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = false;
+    btn.textContent = '▶ 开始 AI 批改';
+  };
+  reader.readAsDataURL(file);
+}
+
+// =============================================
+// AI 批改核心
+// =============================================
+function buildPrompt() {
+  const subjectHint = currentSubject !== '自动识别' ? `学科：${currentSubject}。` : '请先自动识别学科类型。';
+  const gradeHint = cfg.grade ? `年级：${cfg.grade}。` : '';
+  const detailMap = {
+    detailed: '对每道错题和空题给出详细解析，包括正确解题思路和关键知识点。',
+    brief: '对错题简要说明错误原因。',
+    steps: '对错题给出分步骤详细解题过程。'
+  };
+  const detailHint = detailMap[cfg.detail] || detailMap.detailed;
+
+  return `你是一位专业教师，正在批改学生作业。${subjectHint}${gradeHint}
+
+请仔细分析图片中的每一道题，完成以下任务：
+
+1. 识别所有题目（包括题号、题目内容、学生的作答）
+2. 判断每题状态：✅正确 / ❌错误 / ⬜空题（未作答）
+3. 对错题和空题进行解析
+
+${detailHint}
+
+请严格按以下JSON格式输出，不要输出任何其他内容：
+{
+  "subject": "学科名称",
+  "total": 总题数,
+  "correct": 正确题数,
+  "wrong": 错误题数,
+  "empty": 空题数,
+  "score": 得分（满分100换算，保留整数）,
+  "overall_comment": "整体评价（1-2句话，鼓励为主）",
+  "questions": [
+    {
+      "num": "题号如1或(1)或第一题",
+      "status": "correct/wrong/empty",
+      "content": "题目内容简述（不超过40字）",
+      "student_answer": "学生答案（空题填null）",
+      "correct_answer": "正确答案（正确题可填null）",
+      "analysis": "错题/空题的解析和解题思路（正确题填null）",
+      "key_point": "涉及的知识点（正确题可填null）"
+    }
+  ]
+}`;
+}
+
+async function startGrading() {
+  if (!cfg.apikey) {
+    showToast('⚠️ 请先在设置中配置 API Key');
+    setTimeout(() => switchTab(2), 600);
+    return;
+  }
+  if (!currentImageData) { showToast('请先选择图片'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 批改中...';
+
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('result-wrap').style.display = 'none';
+  document.getElementById('header-badge').textContent = '批改中';
+
+  setProgress(10, 'AI 正在识别图片内容...');
+  await sleep(400);
+  setProgress(30, '识别题目中...');
+
+  try {
+    const preset = PROVIDERS[cfg.provider];
+    const b64 = currentImageData.split(',')[1];
+
+    setProgress(50, 'AI 专家正在批改每道题...');
+
+    const resp = await fetch(`${preset.url}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cfg.apikey}`
+      },
+      body: JSON.stringify({
+        model: preset.model,
+        temperature: 0.1,
+        max_tokens: 8192,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${b64}` } },
+            { type: 'text', text: buildPrompt() }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    setProgress(80, '整理批改结果...');
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content || '';
+
+    setProgress(95, '生成报告...');
+    await sleep(300);
+
+    const result = parseResult(text);
+    if (!result) throw new Error('AI 返回格式异常，请重试');
+
+    currentResult = result;
+
+    // 保存历史
+    history.unshift({
+      id: Date.now(),
+      subject: result.subject,
+      score: result.score,
+      correct: result.correct,
+      wrong: result.wrong,
+      empty: result.empty,
+      total: result.total,
+      imageData: currentImageData,
+      imageName: currentImageName,
+      result: result,
+      time: new Date().toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' })
+    });
+    saveHistory();
+
+    setProgress(100, '批改完成！');
+    await sleep(300);
+
+    document.getElementById('progress-wrap').style.display = 'none';
+    renderResult(result);
+    document.getElementById('preview-status').textContent = `得分 ${result.score}`;
+    document.getElementById('preview-status').style.color = scoreColor(result.score);
+    document.getElementById('header-badge').textContent = `${result.score}分`;
+
+    btn.disabled = false;
+    btn.textContent = '🔄 重新批改';
+    showToast(`✅ 批改完成！得分 ${result.score} 分`);
+
+  } catch(err) {
+    setProgress(0, '');
+    document.getElementById('progress-wrap').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = '▶ 重新批改';
+    document.getElementById('header-badge').textContent = '失败';
+    showToast('❌ ' + (err.message || '批改失败，请重试'));
+  }
+}
+
+function parseResult(text) {
+  try {
+    const clean = text.replace(/```json|```/g, '').trim();
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}') + 1;
+    if (s !== -1 && e > 0) return JSON.parse(clean.slice(s, e));
+  } catch(e) {}
+  return null;
+}
+
+// =============================================
+// 渲染结果
+// =============================================
+function scoreColor(score) {
+  if (score >= 90) return 'var(--green)';
+  if (score >= 70) return 'var(--orange)';
+  if (score >= 60) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function renderResult(result) {
+  const rw = document.getElementById('result-wrap');
+  rw.innerHTML = '';
+  rw.style.display = 'block';
+
+  const color = scoreColor(result.score);
+  const comment = result.overall_comment || '';
+
+  // 分数卡
+  const scoreCard = document.createElement('div');
+  scoreCard.className = 'result-header';
+  scoreCard.innerHTML = `
+    <div class="score-row">
+      <div class="score-circle" style="border-color:${color}">
+        <div class="score-num" style="color:${color}">${result.score}</div>
+        <div class="score-unit" style="color:${color}">分</div>
+      </div>
+      <div class="score-detail">
+        <div class="score-title">${escHtml(result.subject || currentSubject)}</div>
+        <div class="score-stats">
+          <span class="stat-chip chip-total">共 ${result.total} 题</span>
+          <span class="stat-chip chip-correct">✅ 对 ${result.correct}</span>
+          ${result.wrong > 0 ? `<span class="stat-chip chip-wrong">❌ 错 ${result.wrong}</span>` : ''}
+          ${result.empty > 0 ? `<span class="stat-chip chip-empty">⬜ 空 ${result.empty}</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${comment ? `<div style="font-size:14px;color:var(--gray-600);background:var(--orange-light);padding:10px 12px;border-radius:10px;line-height:1.6">💬 ${escHtml(comment)}</div>` : ''}
+  `;
+  rw.appendChild(scoreCard);
+
+  const questions = result.questions || [];
+  const wrongQ = questions.filter(q => q.status === 'wrong');
+  const emptyQ = questions.filter(q => q.status === 'empty');
+  const correctQ = questions.filter(q => q.status === 'correct');
+
+  // 错题
+  if (wrongQ.length > 0) {
+    rw.appendChild(sectionTitle(`❌ 错题  ${wrongQ.length} 道`));
+    wrongQ.forEach((q, i) => rw.appendChild(buildQCard(q, 'wrong')));
+  }
+
+  // 空题
+  if (emptyQ.length > 0) {
+    rw.appendChild(sectionTitle(`⬜ 未作答  ${emptyQ.length} 道`));
+    emptyQ.forEach(q => rw.appendChild(buildQCard(q, 'empty')));
+  }
+
+  // 正确题（折叠显示）
+  if (correctQ.length > 0) {
+    const sec = sectionTitle(`✅ 正确  ${correctQ.length} 道`);
+    rw.appendChild(sec);
+    const correctWrap = document.createElement('div');
+    correctWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+    correctQ.forEach(q => {
+      const chip = document.createElement('div');
+      chip.style.cssText = `background:var(--green-light);color:var(--green);
+        padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;`;
+      chip.textContent = `✅ 第${q.num}题`;
+      correctWrap.appendChild(chip);
+    });
+    const correctCard = document.createElement('div');
+    correctCard.className = 'result-header';
+    correctCard.appendChild(correctWrap);
+    rw.appendChild(correctCard);
+  }
+
+  // 报告卡
+  rw.appendChild(buildReportCard(result));
+  rw.appendChild(document.createElement('div')).style.height = '16px';
+
+  // 底部操作栏
+  const bottomBar = document.createElement('div');
+  bottomBar.className = 'bottom-bar';
+  bottomBar.style.cssText = 'position:sticky;bottom:0;';
+  bottomBar.innerHTML = `
+    <button class="btn-new" onclick="resetForNew()">🆕 新作业</button>
+    <button class="btn-copy-report" onclick="copyReport()">📋 复制报告</button>
+  `;
+  rw.appendChild(bottomBar);
+}
+
+function sectionTitle(text) {
+  const el = document.createElement('div');
+  el.className = 'section-title';
+  el.textContent = text;
+  return el;
+}
+
+function buildQCard(q, type) {
+  const colorMap = {
+    wrong: { border: 'var(--red)', badge: 'var(--red)', icon: '❌' },
+    empty: { border: 'var(--yellow)', badge: 'var(--yellow)', icon: '⬜' },
+    correct: { border: 'var(--green)', badge: 'var(--green)', icon: '✅' }
+  };
+  const s = colorMap[type];
+  const card = document.createElement('div');
+  card.className = `q-card card-${type}`;
+  card.style.borderLeftColor = s.border;
+
+  let answerHTML = '';
+  if (q.student_answer) {
+    answerHTML += `<span class="q-answer ans-student">作答：${escHtml(String(q.student_answer).slice(0,30))}</span>`;
+  }
+  if (type === 'wrong' && q.correct_answer) {
+    answerHTML += `<span class="q-answer ans-correct-val">正确：${escHtml(String(q.correct_answer).slice(0,30))}</span>`;
+  }
+
+  card.innerHTML = `
+    <div class="q-header">
+      <div class="q-badge" style="background:${s.badge}">${s.icon}</div>
+      <div class="q-content">
+        <div style="font-size:12px;font-weight:700;color:${s.badge};margin-bottom:4px">第 ${escHtml(String(q.num))} 题</div>
+        <div class="q-text">${escHtml((q.content || '').slice(0,100))}</div>
+        ${answerHTML ? `<div class="q-answer-row">${answerHTML}</div>` : ''}
+      </div>
+    </div>
+    ${q.analysis ? `
+    <div class="q-analysis">
+      <div class="q-analysis-title">💡 解析</div>
+      ${escHtml(q.analysis)}
+    </div>` : ''}
+    ${q.key_point ? `
+    <div style="margin-top:8px;font-size:12px;color:var(--orange);font-weight:600">
+      📌 知识点：${escHtml(q.key_point)}
+    </div>` : ''}
+  `;
+  return card;
+}
+
+function buildReportCard(result) {
+  const studentName = cfg.name ? `${cfg.name} ` : '';
+  const now = new Date().toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const wrongList = (result.questions || []).filter(q => q.status === 'wrong');
+  const emptyList = (result.questions || []).filter(q => q.status === 'empty');
+
+  let reportText = `📋 作业批改报告\n`;
+  reportText += `学生：${studentName || '—'}  时间：${now}\n`;
+  reportText += `学科：${result.subject}  得分：${result.score}分\n`;
+  reportText += `总题数：${result.total}  正确：${result.correct}  错误：${result.wrong}  空题：${result.empty}\n`;
+  reportText += `${'─'.repeat(30)}\n`;
+  if (wrongList.length > 0) {
+    reportText += `\n❌ 错题（${wrongList.length}道）：\n`;
+    wrongList.forEach(q => {
+      reportText += `\n第${q.num}题：${q.content || ''}\n`;
+      if (q.student_answer) reportText += `  作答：${q.student_answer}\n`;
+      if (q.correct_answer) reportText += `  正确：${q.correct_answer}\n`;
+      if (q.analysis) reportText += `  解析：${q.analysis}\n`;
+    });
+  }
+  if (emptyList.length > 0) {
+    reportText += `\n⬜ 未作答（${emptyList.length}道）：\n`;
+    emptyList.forEach(q => { reportText += `  第${q.num}题：${q.content || ''}\n`; });
+  }
+  if (result.overall_comment) reportText += `\n💬 综合评价：${result.overall_comment}`;
+
+  const card = document.createElement('div');
+  card.className = 'report-card';
+  card.innerHTML = `
+    <div class="report-title">📋 完整报告 <span style="font-size:12px;color:var(--gray-400);font-weight:500">（可复制发给家长）</span></div>
+    <div class="report-body" id="report-text-content">${escHtml(reportText)}</div>
+  `;
+  card._reportText = reportText;
+  card.id = 'report-card';
+  return card;
+}
+
+// =============================================
+// 历史记录
+// =============================================
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  el.innerHTML = '';
+  if (!history.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">暂无批改记录</div>
+      <div class="empty-sub">批改完成的作业会保存在这里</div>
+    </div>`;
+    return;
+  }
+  history.forEach(item => {
+    const color = scoreColor(item.score);
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <img class="history-thumb" src="${item.imageData}" alt="">
+      <div class="history-info">
+        <div class="history-subject">${escHtml(item.subject || '未知学科')}</div>
+        <div class="history-score">第${escHtml(String(item.correct))}题对 / 共${escHtml(String(item.total))}题</div>
+        <div class="history-meta">🕐 ${escHtml(item.time)}</div>
+      </div>
+      <div class="history-score-badge" style="border-color:${color}">
+        <div class="history-score-num" style="color:${color}">${item.score}</div>
+        <div class="history-score-unit" style="color:${color}">分</div>
+      </div>
+      <span class="history-arrow">›</span>
+    `;
+    div.onclick = () => showHistoryDetail(item);
+    el.appendChild(div);
+  });
+}
+
+function showHistoryDetail(item) {
+  const result = item.result;
+  const wrongList = (result.questions || []).filter(q => q.status === 'wrong');
+  const emptyList = (result.questions || []).filter(q => q.status === 'empty');
+  const color = scoreColor(result.score);
+
+  let html = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <div class="score-circle" style="border-color:${color};width:60px;height:60px">
+        <div class="score-num" style="color:${color};font-size:20px">${result.score}</div>
+        <div class="score-unit" style="color:${color}">分</div>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:700">${escHtml(result.subject || '未知学科')}</div>
+        <div style="font-size:13px;color:var(--gray-400);margin-top:3px">${escHtml(item.time)}</div>
+        <div class="score-stats" style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="stat-chip chip-correct">✅ ${result.correct}</span>
+          ${result.wrong > 0 ? `<span class="stat-chip chip-wrong">❌ ${result.wrong}</span>` : ''}
+          ${result.empty > 0 ? `<span class="stat-chip chip-empty">⬜ ${result.empty}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (wrongList.length > 0) {
+    html += `<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:8px">❌ 错题</div>`;
+    wrongList.forEach(q => {
+      html += `<div class="detail-q-item" style="border-color:var(--red)">
+        <div style="font-weight:700;font-size:13px;margin-bottom:6px">第${escHtml(String(q.num))}题：${escHtml((q.content||'').slice(0,50))}</div>
+        ${q.correct_answer ? `<div style="font-size:12px;color:var(--green);margin-bottom:4px">✅ 正确答案：${escHtml(String(q.correct_answer))}</div>` : ''}
+        ${q.analysis ? `<div style="font-size:12px;color:var(--gray-600);line-height:1.6">💡 ${escHtml(q.analysis)}</div>` : ''}
+      </div>`;
+    });
+  }
+  if (emptyList.length > 0) {
+    html += `<div style="font-size:13px;font-weight:700;color:var(--yellow);margin:10px 0 8px">⬜ 未作答</div>`;
+    emptyList.forEach(q => {
+      html += `<div class="detail-q-item" style="border-color:var(--yellow)">
+        <div style="font-size:13px">第${escHtml(String(q.num))}题：${escHtml((q.content||'').slice(0,60))}</div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('modal-detail-content').innerHTML = html;
+  openModal('modal-detail');
+}
+
+// =============================================
+// 操作
+// =============================================
+function resetForNew() {
+  currentImageData = null; currentImageName = ''; currentResult = null;
+  document.getElementById('upload-area-wrap').style.display = 'block';
+  document.getElementById('preview-wrap').style.display = 'none';
+  document.getElementById('result-wrap').style.display = 'none';
+  document.getElementById('result-wrap').innerHTML = '';
+  document.getElementById('progress-wrap').style.display = 'none';
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true; btn.textContent = '选择图片后开始批改';
+  document.getElementById('header-badge').textContent = '就绪';
+  document.getElementById('home-scroll').scrollTop = 0;
+}
+
+async function copyReport() {
+  const card = document.getElementById('report-card');
+  const text = card?._reportText || '';
+  if (!text) { showToast('暂无报告'); return; }
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch(e) {
+    const el = document.createElement('textarea');
+    el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select();
+    document.execCommand('copy'); document.body.removeChild(el);
+  }
+  showToast('✅ 报告已复制，可直接发给家长');
+}
+
+// =============================================
+// 工具
+// =============================================
+function setProgress(pct, msg) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  if (msg) document.getElementById('progress-msg').textContent = msg;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showToast(msg, dur = 2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =============================================
+// SW 注册
+// =============================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+loadCfg();
+</script>
+</body>
+</html>
